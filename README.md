@@ -1,6 +1,8 @@
 # SB <a href="https://gitpod.io/#https://github.com/gouniverse/sb" style="float:right:"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod" loading="lazy"></a>
 
 ![tests](https://github.com/gouniverse/sb/workflows/tests/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/gouniverse/sb)](https://goreportcard.com/report/github.com/gouniverse/sb)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/gouniverse/sb)](https://pkg.go.dev/github.com/gouniverse/sb)
 
 A simplified SQL builder (with limited functionality).
 
