@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gouniverse/utils"
 	"github.com/samber/lo"
 )
 
@@ -508,10 +507,10 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 				if columnDecimals == 0 {
 					columnDecimals = 2
 				}
-				sql += "(" + utils.ToString(columnLength) + "," + utils.ToString(columnDecimals) + ")"
+				sql += "(" + toString(columnLength) + "," + toString(columnDecimals) + ")"
 
 			} else if columnLength != 0 {
-				sql += "(" + utils.ToString(columnLength) + ")"
+				sql += "(" + toString(columnLength) + ")"
 			}
 
 			// Auto increment
@@ -567,10 +566,10 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 				if columnDecimals == 0 {
 					columnDecimals = 2
 				}
-				sql += "(" + utils.ToString(columnLength) + "," + utils.ToString(columnDecimals) + ")"
+				sql += "(" + toString(columnLength) + "," + toString(columnDecimals) + ")"
 
 			} else if columnLength != 0 && columnType != "TEXT" {
-				sql += "(" + utils.ToString(columnLength) + ")"
+				sql += "(" + toString(columnLength) + ")"
 			}
 
 			// Auto increment
@@ -626,10 +625,10 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 				if columnDecimals == 0 {
 					columnDecimals = 2
 				}
-				sql += "(" + utils.ToString(columnLength) + "," + utils.ToString(columnDecimals) + ")"
+				sql += "(" + toString(columnLength) + "," + toString(columnDecimals) + ")"
 
 			} else if columnLength != 0 {
-				sql += "(" + utils.ToString(columnLength) + ")"
+				sql += "(" + toString(columnLength) + ")"
 			}
 
 			// Auto increment
