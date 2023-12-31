@@ -1,13 +1,12 @@
-# sb
-Golang SQL Builder
-
-# SQL <a href="https://gitpod.io/#https://github.com/gouniverse/sb" style="float:right:"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod" loading="lazy"></a>
+# SB <a href="https://gitpod.io/#https://github.com/gouniverse/sb" style="float:right:"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod" loading="lazy"></a>
 
 ![tests](https://github.com/gouniverse/sb/workflows/tests/badge.svg)
 
-A simplified builder (with limited functionality).
+A simplified SQL builder (with limited functionality).
 
 For a full SQL builder functionality check: https://doug-martin.github.io/goqu
+
+Includes a wrapper for the mainstream DB package to allow transparent working with transactions.
 
 
 ## Installation
@@ -24,23 +23,34 @@ import "github.com/gouniverse/sb"
 
 sql := sb.NewBuilder(DIALECT_MYSQL).
 	Table("users").
-	Column("id", COLUMN_TYPE_STRING, map[string]string{
-		COLUMN_ATTRIBUTE_PRIMARY: "yes",
-		COLUMN_ATTRIBUTE_LENGTH:  "40",
+	Column(Column{
+		Name:       "id",
+		Type:       COLUMN_TYPE_STRING,
+		Length:     40,
+		PrimaryKey: true,
 	}).
-	Column("image", COLUMN_TYPE_BLOB, map[string]string{}).
-	Column("price_default", COLUMN_TYPE_DECIMAL, map[string]string{
-		COLUMN_ATTRIBUTE_LENGTH:   "12",
-		COLUMN_ATTRIBUTE_DECIMALS: "10",
+	Column(Column{
+		Name: "image",
+		Type: COLUMN_TYPE_BLOB,
 	}).
-	Column("price_custom", COLUMN_TYPE_DECIMAL, map[string]string{
-		COLUMN_ATTRIBUTE_LENGTH:   "12",
-		COLUMN_ATTRIBUTE_DECIMALS: "10",
+	Column(Column{
+		Name: "price_default",
+		Type: COLUMN_TYPE_DECIMAL,
 	}).
-	Column("created_at", COLUMN_TYPE_DATETIME, map[string]string{}).
-	Column("updated_at", COLUMN_TYPE_DATETIME, map[string]string{}).
-	Column("deleted_at", COLUMN_TYPE_DATETIME, map[string]string{
-		COLUMN_ATTRIBUTE_NULLABLE: "yes",
+	Column(Column{
+		Name:     "price_custom",
+		Type:     COLUMN_TYPE_DECIMAL,
+		Length:   12,
+		Decimals: 10,
+	}).
+	Column(Column{
+		Name: "created_at",
+		Type: COLUMN_TYPE_DATETIME,
+	}).
+	Column(Column{
+		Name:     "deleted_at",
+		Type:     COLUMN_TYPE_DATETIME,
+		Nullable: true,
 	}).
 	Create()
 ```
@@ -49,8 +59,8 @@ sql := sb.NewBuilder(DIALECT_MYSQL).
 
 ```go
 sql := NewBuilder(DIALECT_MYSQL).
-		Table("users").
-		Drop()
+	Table("users").
+	Drop()
 ```
 
 
