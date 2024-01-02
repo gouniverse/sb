@@ -33,6 +33,7 @@ type Column struct {
 	AutoIncrement bool
 	PrimaryKey    bool
 	Nullable      bool
+	Unique        bool
 }
 
 type Builder struct {
@@ -475,6 +476,7 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 					return "VARCHAR"
 				}).
 				ElseIfF(columnType == COLUMN_TYPE_INTEGER, func() string {
+					columnLength = lo.Ternary(columnLength == 0, 20, columnLength)
 					return "BIGINT"
 				}).
 				ElseIfF(columnType == COLUMN_TYPE_FLOAT, func() string {
@@ -526,6 +528,10 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 			// Non Nullable / Required
 			if !columnNullable {
 				sql += " NOT NULL"
+			}
+
+			if column.Unique {
+				sql += " UNIQUE"
 			}
 			return sql
 		}).ElseIfF(b.Dialect == DIALECT_POSTGRES, func() string {
@@ -586,6 +592,10 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 			if !columnNullable {
 				sql += " NOT NULL"
 			}
+
+			if column.Unique {
+				sql += " UNIQUE"
+			}
 			return sql
 		}).ElseIfF(b.Dialect == DIALECT_SQLITE, func() string {
 			columnType := lo.
@@ -645,6 +655,11 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 			if !columnNullable {
 				sql += " NOT NULL"
 			}
+
+			if column.Unique {
+				sql += " UNIQUE"
+			}
+
 			return sql
 		}).ElseF(func() string {
 			return "not supported"
