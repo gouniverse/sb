@@ -6,6 +6,52 @@ import (
 	// _ "github.com/mattn/go-sqlite3"
 )
 
+func TestBuilderTableCreateMssql(t *testing.T) {
+	sql := NewBuilder(DIALECT_MSSQL).
+		Table("users").
+		Column(Column{
+			Name:       "id",
+			Type:       COLUMN_TYPE_STRING,
+			Length:     40,
+			PrimaryKey: true,
+		}).
+		Column(Column{
+			Name:   "email",
+			Type:   COLUMN_TYPE_STRING,
+			Length: 255,
+			Unique: true,
+		}).
+		Column(Column{
+			Name: "image",
+			Type: COLUMN_TYPE_BLOB,
+		}).
+		Column(Column{
+			Name: "price_default",
+			Type: COLUMN_TYPE_DECIMAL,
+		}).
+		Column(Column{
+			Name:     "price_custom",
+			Type:     COLUMN_TYPE_DECIMAL,
+			Length:   12,
+			Decimals: 10,
+		}).
+		Column(Column{
+			Name: "created_at",
+			Type: COLUMN_TYPE_DATETIME,
+		}).
+		Column(Column{
+			Name:     "deleted_at",
+			Type:     COLUMN_TYPE_DATETIME,
+			Nullable: true,
+		}).
+		Create()
+
+	expected := `CREATE TABLE [users] ("id" NVARCHAR(40) PRIMARY KEY NOT NULL, "email" NVARCHAR(255) NOT NULL UNIQUE, "image" VARBINARY(MAX) NOT NULL, "price_default" DECIMAL(10,2) NOT NULL, "price_custom" DECIMAL(12,10) NOT NULL, "created_at" DATETIME2 NOT NULL, "deleted_at" DATETIME2);`
+	if sql != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
+	}
+}
+
 func TestBuilderTableCreateMysql(t *testing.T) {
 	sql := NewBuilder(DIALECT_MYSQL).
 		Table("users").

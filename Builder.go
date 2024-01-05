@@ -115,6 +115,9 @@ func (b *Builder) Create() string {
 		if b.Dialect == DIALECT_MYSQL || b.Dialect == DIALECT_POSTGRES || b.Dialect == DIALECT_SQLITE {
 			sql = `CREATE TABLE ` + b.quoteTable(b.sqlTableName) + `(` + b.columnsToSQL(b.sqlColumns) + `);`
 		}
+		if b.Dialect == DIALECT_MSSQL {
+			sql = `CREATE TABLE [` + b.sqlTableName + `] (` + b.columnsToSQL(b.sqlColumns) + `);`
+		}
 	}
 
 	if isView {
@@ -636,6 +639,73 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 					columnDecimals = 2
 				}
 				sql += "(" + toString(columnLength) + "," + toString(columnDecimals) + ")"
+
+			} else if columnLength != 0 {
+				sql += "(" + toString(columnLength) + ")"
+			}
+
+			// Auto increment
+			if columnAuto {
+				sql += " AUTOINCREMENT"
+			}
+
+			// Primary key
+			if columnPrimary {
+				sql += " PRIMARY KEY"
+			}
+
+			// Non Nullable / Required
+			if !columnNullable {
+				sql += " NOT NULL"
+			}
+
+			if column.Unique {
+				sql += " UNIQUE"
+			}
+
+			return sql
+		}).ElseIfF(b.Dialect == DIALECT_MSSQL, func() string {
+			columnType := lo.
+				IfF(columnType == COLUMN_TYPE_STRING, func() string {
+					return "NVARCHAR"
+				}).
+				ElseIfF(columnType == COLUMN_TYPE_INTEGER, func() string {
+					return "INTEGER"
+				}).
+				ElseIfF(columnType == COLUMN_TYPE_FLOAT, func() string {
+					return "FLOAT"
+				}).
+				ElseIfF(columnType == COLUMN_TYPE_TEXT, func() string {
+					return "TEXT"
+				}).
+				ElseIfF(columnType == COLUMN_TYPE_BLOB, func() string {
+					return "VARBINARY"
+				}).
+				ElseIfF(columnType == COLUMN_TYPE_DATE, func() string {
+					return "DATE"
+				}).
+				ElseIfF(columnType == COLUMN_TYPE_DATETIME, func() string {
+					return "DATETIME2"
+				}).
+				ElseIfF(columnType == COLUMN_TYPE_DECIMAL, func() string {
+					return "DECIMAL"
+				}).
+				Else(columnType)
+
+			sql := `"` + columnName + `" ` + columnType + ``
+
+			// Column length
+			if columnType == "DECIMAL" {
+				if columnLength == 0 {
+					columnLength = 10
+				}
+				if columnDecimals == 0 {
+					columnDecimals = 2
+				}
+				sql += "(" + toString(columnLength) + "," + toString(columnDecimals) + ")"
+
+			} else if columnType == "VARBINARY" {
+				sql += "(MAX)"
 
 			} else if columnLength != 0 {
 				sql += "(" + toString(columnLength) + ")"

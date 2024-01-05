@@ -1,6 +1,7 @@
 package sb
 
 // Dialects
+const DIALECT_MSSQL = "mssql"
 const DIALECT_MYSQL = "mysql"
 const DIALECT_POSTGRES = "postgres"
 const DIALECT_SQLITE = "sqlite"
