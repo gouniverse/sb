@@ -254,7 +254,7 @@ func (d *Database) SelectToMapAny(sqlStr string, args ...any) ([]map[string]any,
 
 	listMap := []map[string]any{}
 
-	err := sqlscan.Select(context.Background(), d.db, &listMap, sqlStr)
+	err := sqlscan.Select(context.Background(), d.db, &listMap, sqlStr, args...)
 	if err != nil {
 		if sqlscan.NotFound(err) {
 			return []map[string]any{}, nil
