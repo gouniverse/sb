@@ -97,14 +97,26 @@ func TestCommon(t *testing.T) {
 }
 
 func TestNullDate(t *testing.T) {
-	if NULL_DATE != "0001-01-01" {
-		t.Fatal(`NULL_DATE must be "0001-01-01"`)
+	if NULL_DATE != "0002-01-01" {
+		t.Fatal(`NULL_DATE must be "0002-01-01", found: `, NULL_DATE)
+	}
+
+	layout := "2006-01-02"
+
+	tm, err := time.Parse(layout, NULL_DATE)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if tm.IsZero() {
+		t.Fatal(`NULL_DATE must not be zero`)
 	}
 }
 
 func TestNullDateTime(t *testing.T) {
-	if NULL_DATETIME != "0001-01-01 00:00:00" {
-		t.Fatal(`NULL_DATETIME must be "0001-01-01 00:00:00"`)
+	if NULL_DATETIME != "0002-01-01 00:00:00" {
+		t.Fatal(`NULL_DATETIME must be "0002-01-01 00:00:00", found: `, NULL_DATETIME)
 	}
 
 	layout := "2006-01-02 15:04:05"
@@ -115,7 +127,7 @@ func TestNullDateTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !tm.IsZero() {
-		t.Fatal(`NULL_DATETIME must be zero`)
+	if tm.IsZero() {
+		t.Fatal(`NULL_DATETIME must not be zero`)
 	}
 }

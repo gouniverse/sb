@@ -54,7 +54,7 @@ func (d *Database) SqlLogShrink(leaveLast int) {
 
 	keys := []string{}
 
-	for key, _ := range d.sqlLog {
+	for key := range d.sqlLog {
 		keys = append(keys, key)
 	}
 

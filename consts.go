@@ -28,9 +28,9 @@ const COLUMN_TYPE_LONGTEXT = "longtext"
 const YES = "yes"
 const NO = "no"
 
-// Null time
-const NULL_DATE = "0001-01-01"
-const NULL_DATETIME = "0001-01-01 00:00:00"
+// Null time (earliest valid date in Gregorian calendar is 1AD, no year 0)
+const NULL_DATE = "0002-01-01"
+const NULL_DATETIME = "0002-01-01 00:00:00"
 
 // Sortable
 const ASC = "asc"

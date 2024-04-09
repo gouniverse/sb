@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewDatabase(t *testing.T) {
-	conn, err := sql.Open("sqlite3", "test_newdatabase.db")
+	conn, err := sql.Open("sqlite3", "test_new_database.db")
 	if err != nil {
 		t.Fatal("Error must be NIL but got: ", err.Error())
 	}
