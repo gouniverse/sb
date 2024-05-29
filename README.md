@@ -206,4 +206,5 @@ mapString := myDb.SelectToMapAny(sql)
 - https://github.com/es-code/gql
 - https://github.com/cosiner/go-sqldb
 - https://github.com/simukti/sqldb-logger
+- https://github.com/elgs/gosqlcrud
 
