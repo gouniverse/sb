@@ -32,6 +32,9 @@ const NO = "no"
 const NULL_DATE = "0002-01-01"
 const NULL_DATETIME = "0002-01-01 00:00:00"
 
+const MAX_DATE = "9999-12-31"
+const MAX_DATETIME = "9999-12-31 23:59:59"
+
 // Sortable
 const ASC = "asc"
 const DESC = "desc"
