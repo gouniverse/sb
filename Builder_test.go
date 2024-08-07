@@ -400,6 +400,39 @@ func TestBuilderViewCreateIfNotExistsSqlite(t *testing.T) {
 	}
 }
 
+func TestBuilderCreateIndexMysql(t *testing.T) {
+	sql := NewBuilder(DIALECT_MYSQL).
+		Table("users").
+		CreateIndex("idx_users_id", "id")
+
+	expected := "CREATE INDEX `idx_users_id` ON `users` (`id`);"
+	if sql != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
+	}
+}
+
+func TestBuilderCreateIndexPostgres(t *testing.T) {
+	sql := NewBuilder(DIALECT_POSTGRES).
+		Table("users").
+		CreateIndex("idx_users_id", "id")
+
+	expected := `CREATE INDEX "idx_users_id" ON "users" ("id");`
+	if sql != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
+	}
+}
+
+func TestBuilderCreateIndexSqlite(t *testing.T) {
+	sql := NewBuilder(DIALECT_SQLITE).
+		Table("users").
+		CreateIndex("idx_users_id", "id")
+
+	expected := `CREATE INDEX "idx_users_id" ON "users" ("id");`
+	if sql != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
+	}
+}
+
 func TestBuilderTableDropMysql(t *testing.T) {
 	sql := NewBuilder(DIALECT_MYSQL).
 		Table("users").

@@ -80,12 +80,9 @@ func (b *Builder) Column(column Column) *Builder {
 	if column.Type == "" {
 		panic("column type is required")
 	}
-	// sqlColumn := map[string]any{
-	// 	"column_name":    columnName,
-	// 	"column_type":    columnType,
-	// 	"column_options": opts,
-	// }
+
 	b.sqlColumns = append(b.sqlColumns, column)
+
 	return b
 }
 
@@ -171,14 +168,24 @@ func (b *Builder) CreateIfNotExists() string {
 	return sql
 }
 
+func (b *Builder) CreateIndex(indexName string, columnName string) string {
+	if b.sqlTableName == "" {
+		panic("In method CreateIndex() no table specified to create index on!")
+	}
+
+	sql := `CREATE INDEX ` + b.quoteTable(indexName) + ` ON ` + b.quoteTable(b.sqlTableName) + ` (` + b.quoteColumn(columnName) + `);`
+
+	return sql
+}
+
 /**
  * The delete method deletes a row in a table. For deleting a database
  * or table use the drop method.
  * <code>
  * // Deleting a row
- * $database->table("STATES")->where("STATE_NAME","=","Alabama")->delete();
+ * sql := builder.Table("STATES").Where("STATE_NAME","=","Alabama").Delete();
  * </code>
- * @return boolean true, on success, false, otherwise
+ * @return string
  * @access public
  */
 // Drop deletes a table
