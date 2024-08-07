@@ -168,12 +168,16 @@ func (b *Builder) CreateIfNotExists() string {
 	return sql
 }
 
-func (b *Builder) CreateIndex(indexName string, columnName string) string {
+func (b *Builder) CreateIndex(indexName string, columnName ...string) string {
 	if b.sqlTableName == "" {
 		panic("In method CreateIndex() no table specified to create index on!")
 	}
 
-	sql := `CREATE INDEX ` + b.quoteTable(indexName) + ` ON ` + b.quoteTable(b.sqlTableName) + ` (` + b.quoteColumn(columnName) + `);`
+	columns := lo.Map(columnName, func(columnName string, i int) string {
+		return b.quoteColumn(columnName)
+	})
+
+	sql := `CREATE INDEX ` + b.quoteTable(indexName) + ` ON ` + b.quoteTable(b.sqlTableName) + ` (` + strings.Join(columns, `,`) + `);`
 
 	return sql
 }
