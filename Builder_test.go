@@ -82,6 +82,14 @@ func TestBuilderTableCreateMysql(t *testing.T) {
 			Decimals: 10,
 		}).
 		Column(Column{
+			Name: "short_description",
+			Type: COLUMN_TYPE_TEXT,
+		}).
+		Column(Column{
+			Name: "long_description",
+			Type: COLUMN_TYPE_LONGTEXT,
+		}).
+		Column(Column{
 			Name: "created_at",
 			Type: COLUMN_TYPE_DATETIME,
 		}).
@@ -92,7 +100,7 @@ func TestBuilderTableCreateMysql(t *testing.T) {
 		}).
 		Create()
 
-	expected := "CREATE TABLE `users`(`id` VARCHAR(40) PRIMARY KEY NOT NULL, `email` VARCHAR(255) NOT NULL UNIQUE, `image` LONGBLOB NOT NULL, `price_default` DECIMAL(10,2) NOT NULL, `price_custom` DECIMAL(12,10) NOT NULL, `created_at` DATETIME NOT NULL, `deleted_at` DATETIME);"
+	expected := "CREATE TABLE `users`(`id` VARCHAR(40) PRIMARY KEY NOT NULL, `email` VARCHAR(255) NOT NULL UNIQUE, `image` LONGBLOB NOT NULL, `price_default` DECIMAL(10,2) NOT NULL, `price_custom` DECIMAL(12,10) NOT NULL, `short_description` LONGTEXT NOT NULL, `long_description` LONGTEXT NOT NULL, `created_at` DATETIME NOT NULL, `deleted_at` DATETIME);"
 	if sql != expected {
 		t.Fatal("Expected:\n", expected, "\n but found:\n", sql)
 	}
@@ -128,6 +136,14 @@ func TestBuilderTableCreatePostgres(t *testing.T) {
 			Decimals: 10,
 		}).
 		Column(Column{
+			Name: "short_description",
+			Type: COLUMN_TYPE_TEXT,
+		}).
+		Column(Column{
+			Name: "long_description",
+			Type: COLUMN_TYPE_LONGTEXT,
+		}).
+		Column(Column{
 			Name: "created_at",
 			Type: COLUMN_TYPE_DATETIME,
 		}).
@@ -138,7 +154,7 @@ func TestBuilderTableCreatePostgres(t *testing.T) {
 		}).
 		Create()
 
-	expected := `CREATE TABLE "users"("id" TEXT PRIMARY KEY NOT NULL, "email" TEXT NOT NULL UNIQUE, "image" BYTEA NOT NULL, "price_default" DECIMAL(10,2) NOT NULL, "price_custom" DECIMAL(12,10) NOT NULL, "created_at" TIMESTAMP NOT NULL, "deleted_at" TIMESTAMP);`
+	expected := `CREATE TABLE "users"("id" TEXT PRIMARY KEY NOT NULL, "email" TEXT NOT NULL UNIQUE, "image" BYTEA NOT NULL, "price_default" DECIMAL(10,2) NOT NULL, "price_custom" DECIMAL(12,10) NOT NULL, "short_description" TEXT NOT NULL, "long_description" TEXT NOT NULL, "created_at" TIMESTAMP NOT NULL, "deleted_at" TIMESTAMP);`
 	if sql != expected {
 		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
 	}
@@ -174,6 +190,14 @@ func TestBuilderTableCreateSqlite(t *testing.T) {
 			Decimals: 10,
 		}).
 		Column(Column{
+			Name: "short_description",
+			Type: COLUMN_TYPE_TEXT,
+		}).
+		Column(Column{
+			Name: "long_description",
+			Type: COLUMN_TYPE_LONGTEXT,
+		}).
+		Column(Column{
 			Name: "created_at",
 			Type: COLUMN_TYPE_DATETIME,
 		}).
@@ -184,7 +208,7 @@ func TestBuilderTableCreateSqlite(t *testing.T) {
 		}).
 		Create()
 
-	expected := `CREATE TABLE "users"("id" TEXT(40) PRIMARY KEY NOT NULL, "email" TEXT(255) NOT NULL UNIQUE, "image" BLOB NOT NULL, "price_default" DECIMAL(10,2) NOT NULL, "price_custom" DECIMAL(12,10) NOT NULL, "created_at" DATETIME NOT NULL, "deleted_at" DATETIME);`
+	expected := `CREATE TABLE "users"("id" TEXT(40) PRIMARY KEY NOT NULL, "email" TEXT(255) NOT NULL UNIQUE, "image" BLOB NOT NULL, "price_default" DECIMAL(10,2) NOT NULL, "price_custom" DECIMAL(12,10) NOT NULL, "short_description" TEXT NOT NULL, "long_description" TEXT NOT NULL, "created_at" DATETIME NOT NULL, "deleted_at" DATETIME);`
 	if sql != expected {
 		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
 	}

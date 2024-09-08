@@ -471,7 +471,7 @@ func (b *Builder) Where(where Where) *Builder {
 
 // columnsToSQL converts the columns statements to SQL.
 func (b *Builder) columnsToSQL(columns []Column) string {
-	columnSqls := []string{}
+	columnSQLs := []string{}
 
 	for i := 0; i < len(columns); i++ {
 		column := columns[i]
@@ -497,6 +497,9 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 					return "DOUBLE"
 				}).
 				ElseIfF(columnType == COLUMN_TYPE_TEXT, func() string {
+					return "LONGTEXT"
+				}).
+				ElseIfF(columnType == COLUMN_TYPE_LONGTEXT, func() string {
 					return "LONGTEXT"
 				}).
 				ElseIfF(columnType == COLUMN_TYPE_BLOB, func() string {
@@ -562,6 +565,9 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 				ElseIfF(columnType == COLUMN_TYPE_TEXT, func() string {
 					return "TEXT"
 				}).
+				ElseIfF(columnType == COLUMN_TYPE_LONGTEXT, func() string {
+					return "TEXT" // PostgreSQL only has TEXT (which defaults to LONGTEXT)
+				}).
 				ElseIfF(columnType == COLUMN_TYPE_BLOB, func() string {
 					return "BYTEA"
 				}).
@@ -624,6 +630,9 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 				}).
 				ElseIfF(columnType == COLUMN_TYPE_TEXT, func() string {
 					return "TEXT"
+				}).
+				ElseIfF(columnType == COLUMN_TYPE_LONGTEXT, func() string {
+					return "TEXT" // SQLite only has TEXT (which defaults to LONGTEXT)
 				}).
 				ElseIfF(columnType == COLUMN_TYPE_BLOB, func() string {
 					return "BLOB"
@@ -746,10 +755,10 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 			return "not supported"
 		})
 
-		columnSqls = append(columnSqls, columnSql)
+		columnSQLs = append(columnSQLs, columnSql)
 	}
 
-	return strings.Join(columnSqls, ", ")
+	return strings.Join(columnSQLs, ", ")
 }
 
 func (b *Builder) whereToSqlSingle(column string, operator string, value string) string {
