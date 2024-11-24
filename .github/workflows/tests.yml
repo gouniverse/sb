@@ -20,6 +20,11 @@ jobs:
       MYSQL_DATABASE: test
       MYSQL_USER: root
       MYSQL_PASS: root
+      POSTGRES_HOST: postgers
+      POSTGRES_PORT: 55432
+      POSTGRES_DATABASE: test
+      POSTGRES_USER: test
+      POSTGRES_PASS: test
 
     steps:
     - uses: actions/checkout@v3
