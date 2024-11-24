@@ -198,6 +198,17 @@ mapString := myDb.SelectToMapAny(sql)
 ```
 
 
+## Developers
+
+```sh
+podman run -it --rm -p 3306:3306 -e MYSQL_ROOT_PASSWORD=test -e MYSQL_DATABASE=test -e MYSQL_USER=test -e MYSQL_PASSWORD=test mysql:latest
+```
+
+```sh
+podman run -it --rm -p 5432:5432 -e POSTGRES_PASSWORD=test -e POSTGRES_DB=test -e POSTGRES_USER=test postgres:latest
+```
+
+
 
 ## Similar
 

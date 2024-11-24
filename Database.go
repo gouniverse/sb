@@ -12,6 +12,17 @@ import (
 	"github.com/gouniverse/uid"
 )
 
+// == CONSTRUCTOR ============================================================
+
+func NewDatabase(db *sql.DB, databaseType string) DatabaseInterface {
+	return &Database{
+		db:           db,
+		databaseType: databaseType,
+	}
+}
+
+// == TYPE ===================================================================
+
 type Database struct {
 	db             *sql.DB
 	tx             *sql.Tx
@@ -22,16 +33,38 @@ type Database struct {
 	debug          bool
 }
 
+// == INTERFACE ==============================================================
+
+var _ DatabaseInterface = (*Database)(nil)
+
+// == PUBLIC METHODS =========================================================
+
+func (d *Database) IsMssql() bool {
+	return d.databaseType == DIALECT_MSSQL
+}
+
+func (d *Database) IsMysql() bool {
+	return d.databaseType == DIALECT_MYSQL
+}
+
+func (d *Database) IsPostgres() bool {
+	return d.databaseType == DIALECT_POSTGRES
+}
+
+func (d *Database) IsSqlite() bool {
+	return d.databaseType == DIALECT_SQLITE
+}
+
 func (d *Database) SqlLog() []map[string]string {
-	log := []map[string]string{}
+	logArray := []map[string]string{}
 	for key, value := range d.sqlLog {
 		sqlDuration := d.sqlDurationLog[key]
-		log = append(log, map[string]string{
+		logArray = append(logArray, map[string]string{
 			"sql":  value,
 			"time": sqlDuration.String(),
 		})
 	}
-	return log
+	return logArray
 }
 
 func (d *Database) SqlLogEmpty() {
@@ -281,4 +314,8 @@ func (d *Database) SelectToMapString(sqlStr string, args ...any) ([]map[string]s
 	}
 
 	return listMapString, nil
+}
+
+func (d *Database) Tx() *sql.Tx {
+	return d.tx
 }

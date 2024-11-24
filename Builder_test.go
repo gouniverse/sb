@@ -1,10 +1,34 @@
 package sb
 
 import (
+	"database/sql"
+	"errors"
+	"os"
 	"testing"
+
 	// _ "github.com/glebarez/go-sqlite"
-	// _ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3"
 )
+
+func initSqliteDB(filepath string) (DatabaseInterface, error) {
+	if filepath == "" {
+		return nil, errors.New("filepath is required")
+	}
+
+	err := os.Remove(filepath) // remove database
+
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+
+	sqlDB, err := sql.Open("sqlite3", filepath)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return NewDatabase(sqlDB, DIALECT_SQLITE), nil
+}
 
 func TestBuilderTableCreateMssql(t *testing.T) {
 	sql := NewBuilder(DIALECT_MSSQL).
@@ -457,6 +481,168 @@ func TestBuilderCreateIndexSqlite(t *testing.T) {
 	}
 }
 
+func TestBuilderTableColumnAddSqlite(t *testing.T) {
+	db, err := initSqliteDB("test_column_add.db")
+
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
+	defer db.Close()
+
+	sqlTableCreate := NewBuilder(DIALECT_MYSQL).
+		Table("users").
+		Column(Column{
+			Name:       "id",
+			Type:       COLUMN_TYPE_STRING,
+			Length:     40,
+			PrimaryKey: true,
+		}).
+		Column(Column{
+			Name:   "email",
+			Type:   COLUMN_TYPE_STRING,
+			Length: 255,
+			Unique: true,
+		}).
+		Column(Column{
+			Name: "created_at",
+			Type: COLUMN_TYPE_DATETIME,
+		}).
+		Column(Column{
+			Name:     "deleted_at",
+			Type:     COLUMN_TYPE_DATETIME,
+			Nullable: true,
+		}).
+		Create()
+
+	result, err := db.Exec(sqlTableCreate)
+
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
+	if result == nil {
+		t.Fatal("Result must not be NIL")
+	}
+
+	sqlColumnRename, err := NewBuilder(DIALECT_SQLITE).
+		TableColumnAdd("users", Column{
+			Name:     "name",
+			Type:     COLUMN_TYPE_STRING,
+			Nullable: true,
+		})
+
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
+	expected := `ALTER TABLE "users" ADD COLUMN "name" TEXT;`
+	if sqlColumnRename != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sqlColumnRename)
+	}
+
+	result, err = db.Exec(sqlColumnRename)
+
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
+	if result == nil {
+		t.Fatal("Result must not be NIL")
+	}
+
+	sql := NewBuilder(DIALECT_SQLITE).Table("users").Select([]string{"id", "email", "name", "created_at", "deleted_at"})
+
+	rows, err := db.Query(sql)
+
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
+	if rows == nil {
+		t.Fatal("Rows must not be NIL")
+	}
+}
+
+func TestBuilderTableColumnRenameSqlite(t *testing.T) {
+	db, err := initSqliteDB("test_column_rename.db")
+
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
+	defer db.Close()
+
+	sqlTableCreate := NewBuilder(DIALECT_MYSQL).
+		Table("users").
+		Column(Column{
+			Name:       "id",
+			Type:       COLUMN_TYPE_STRING,
+			Length:     40,
+			PrimaryKey: true,
+		}).
+		Column(Column{
+			Name:   "email",
+			Type:   COLUMN_TYPE_STRING,
+			Length: 255,
+			Unique: true,
+		}).
+		Column(Column{
+			Name: "created_at",
+			Type: COLUMN_TYPE_DATETIME,
+		}).
+		Column(Column{
+			Name:     "deleted_at",
+			Type:     COLUMN_TYPE_DATETIME,
+			Nullable: true,
+		}).
+		Create()
+
+	result, err := db.Exec(sqlTableCreate)
+
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
+	if result == nil {
+		t.Fatal("Result must not be NIL")
+	}
+
+	sqlColumnRename, err := NewBuilder(DIALECT_SQLITE).
+		TableColumnRename("users", "email", "name")
+
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
+	expected := `ALTER TABLE "users" RENAME COLUMN "email" TO "name";`
+	if sqlColumnRename != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sqlColumnRename)
+	}
+
+	result, err = db.Exec(sqlColumnRename)
+
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
+	if result == nil {
+		t.Fatal("Result must not be NIL")
+	}
+
+	sql := NewBuilder(DIALECT_SQLITE).Table("users").Select([]string{"id", "name", "created_at", "deleted_at"})
+
+	rows, err := db.Query(sql)
+
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
+	if rows == nil {
+		t.Fatal("Rows must not be NIL")
+	}
+}
+
 func TestBuilderTableDropMysql(t *testing.T) {
 	sql := NewBuilder(DIALECT_MYSQL).
 		Table("users").
@@ -679,6 +865,24 @@ func TestBuilderTableInsertSqlite(t *testing.T) {
 		})
 
 	expected := `INSERT INTO "users" ("first_name", "last_name") VALUES ('Tom', 'Jones') LIMIT 1;`
+	if sql != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
+	}
+}
+
+func TestBuilderTableColumnCreateSqlite(t *testing.T) {
+	sql, err := NewBuilder(DIALECT_SQLITE).TableColumnAdd("table_name", Column{
+		Name:     "name",
+		Type:     COLUMN_TYPE_STRING,
+		Length:   255,
+		Nullable: true,
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := `ALTER TABLE "table_name" ADD COLUMN "name" TEXT(255);`
 	if sql != expected {
 		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
 	}

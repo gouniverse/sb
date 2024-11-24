@@ -1,6 +1,7 @@
 package sb
 
 import (
+	"errors"
 	"sort"
 	"strconv"
 	"strings"
@@ -34,11 +35,11 @@ type Column struct {
 	PrimaryKey    bool
 	Nullable      bool
 	Unique        bool
+	Default       string
 }
 
 type Builder struct {
-	Dialect string
-	//TableName    string
+	Dialect        string
 	sql            map[string]any
 	sqlColumns     []Column
 	sqlGroupBy     []GroupBy
@@ -52,27 +53,29 @@ type Builder struct {
 	sqlWhere       []Where
 }
 
-func (b *Builder) Table(tableName string) *Builder {
+var _ BuilderInterface = (*Builder)(nil)
+
+func (b *Builder) Table(tableName string) BuilderInterface {
 	b.sqlTableName = tableName
 	return b
 }
 
-func (b *Builder) View(viewName string) *Builder {
+func (b *Builder) View(viewName string) BuilderInterface {
 	b.sqlViewName = viewName
 	return b
 }
 
-func (b *Builder) ViewSQL(sql string) *Builder {
+func (b *Builder) ViewSQL(sql string) BuilderInterface {
 	b.sqlViewSQL = sql
 	return b
 }
 
-func (b *Builder) ViewColumns(columns []string) *Builder {
+func (b *Builder) ViewColumns(columns []string) BuilderInterface {
 	b.sqlViewColumns = columns
 	return b
 }
 
-func (b *Builder) Column(column Column) *Builder {
+func (b *Builder) Column(column Column) BuilderInterface {
 	if column.Name == "" {
 		panic("column name is required")
 	}
@@ -268,22 +271,22 @@ func (b *Builder) DropIfExists() string {
 	return sql
 }
 
-func (b *Builder) Limit(limit int64) *Builder {
+func (b *Builder) Limit(limit int64) BuilderInterface {
 	b.sqlLimit = limit
 	return b
 }
 
-func (b *Builder) Offset(offset int64) *Builder {
+func (b *Builder) Offset(offset int64) BuilderInterface {
 	b.sqlOffset = offset
 	return b
 }
 
-func (b *Builder) GroupBy(groupBy GroupBy) *Builder {
+func (b *Builder) GroupBy(groupBy GroupBy) BuilderInterface {
 	b.sqlGroupBy = append(b.sqlGroupBy, groupBy)
 	return b
 }
 
-func (b *Builder) OrderBy(columnName string, direction string) *Builder {
+func (b *Builder) OrderBy(columnName, direction string) BuilderInterface {
 	if strings.EqualFold(direction, "desc") || strings.EqualFold(direction, "descending") {
 		direction = "DESC"
 	} else {
@@ -296,6 +299,79 @@ func (b *Builder) OrderBy(columnName string, direction string) *Builder {
 	})
 
 	return b
+}
+
+// Rename renames a table or a view
+func (b *Builder) TableRename(oldTableName, newTableName string) (sql string, err error) {
+	if b.Dialect == DIALECT_MSSQL {
+		sql = "EXEC sp_rename " + b.quoteTable(oldTableName) + ", " + b.quoteTable(newTableName) + ", 'OBJECT';"
+		return sql, nil
+	}
+
+	if b.Dialect == DIALECT_SQLITE {
+		sql = "ALTER TABLE " + b.quoteTable(oldTableName) + " RENAME TO " + b.quoteTable(newTableName) + ";"
+		return sql, nil
+	}
+
+	if b.Dialect == DIALECT_MYSQL {
+		sql = "ALTER TABLE " + b.quoteTable(oldTableName) + " RENAME " + b.quoteTable(newTableName) + ";"
+		return sql, nil
+	}
+
+	if b.Dialect == DIALECT_POSTGRES {
+		sql = "ALTER TABLE " + b.quoteTable(oldTableName) + " RENAME TO " + b.quoteTable(newTableName) + ";"
+		return sql, nil
+	}
+
+	return "", errors.New("renaming a table is not supported for driver " + b.Dialect + "")
+}
+
+func (b *Builder) TableColumnAdd(tableName string, column Column) (sql string, err error) {
+	if b.Dialect == DIALECT_MSSQL {
+		sql = "ALTER TABLE " + b.quoteTable(tableName) + " ADD " + b.columnsToSQL([]Column{column}) + ";"
+		return sql, nil
+	}
+
+	if b.Dialect == DIALECT_SQLITE {
+		sql = "ALTER TABLE " + b.quoteTable(tableName) + " ADD COLUMN " + b.columnsToSQL([]Column{column}) + ";"
+		return sql, nil
+	}
+
+	if b.Dialect == DIALECT_MYSQL {
+		sql = "ALTER TABLE " + b.quoteTable(tableName) + " ADD " + b.columnsToSQL([]Column{column}) + ";"
+		return sql, nil
+	}
+
+	if b.Dialect == DIALECT_POSTGRES {
+		sql = "ALTER TABLE " + b.quoteTable(tableName) + " ADD " + b.columnsToSQL([]Column{column}) + ";"
+		return sql, nil
+	}
+
+	return "", errors.New("adding a column is not supported for driver " + b.Dialect + "")
+}
+
+func (b *Builder) TableColumnRename(tableName, oldColumnName, newColumnName string) (sql string, err error) {
+	if b.Dialect == DIALECT_MSSQL {
+		sql = "EXEC sp_rename " + b.quoteTable(tableName) + "." + b.quoteTable(oldColumnName) + ", " + b.quoteTable(newColumnName) + ", 'COLUMN';"
+		return sql, nil
+	}
+
+	if b.Dialect == DIALECT_SQLITE {
+		sql = "ALTER TABLE " + b.quoteTable(tableName) + " RENAME COLUMN " + b.quoteTable(oldColumnName) + " TO " + b.quoteTable(newColumnName) + ";"
+		return sql, nil
+	}
+
+	if b.Dialect == DIALECT_MYSQL {
+		sql = "ALTER TABLE " + b.quoteTable(tableName) + " RENAME COLUMN " + b.quoteTable(oldColumnName) + " TO " + b.quoteTable(newColumnName) + ";"
+		return sql, nil
+	}
+
+	if b.Dialect == DIALECT_POSTGRES {
+		sql = "ALTER TABLE " + b.quoteTable(tableName) + " RENAME COLUMN " + b.quoteTable(oldColumnName) + " TO " + b.quoteTable(newColumnName) + ";"
+		return sql, nil
+	}
+
+	return "", errors.New("renaming a column is not supported for driver " + b.Dialect + "")
 }
 
 /** The <b>select</b> method selects rows from a table, based on criteria.
@@ -317,7 +393,7 @@ func (b *Builder) Select(columns []string) string {
 		panic("In method Delete() no table specified to delete from!")
 	}
 
-	join := "" // TODO
+	join := "" // TODO add support for joins
 
 	groupBy := ""
 	if len(b.sqlGroupBy) > 0 {
@@ -406,6 +482,11 @@ func (b *Builder) Insert(columnValuesMap map[string]string) string {
 	return "INSERT INTO " + b.quoteTable(b.sqlTableName) + " (" + strings.Join(columnNames, ", ") + ") VALUES (" + strings.Join(columnValues, ", ") + ")" + limit + offset + ";"
 }
 
+func (b *Builder) Truncate() string {
+	// TODO: implement
+	return ""
+}
+
 /**
  * The <b>update</b> method updates the values of a row in a table.
  * <code>
@@ -421,7 +502,7 @@ func (b *Builder) Update(columnValues map[string]string) string {
 		panic("In method Delete() no table specified to delete from!")
 	}
 
-	join := "" // TODO
+	join := "" // TODO add support for joins
 
 	groupBy := ""
 	if len(b.sqlGroupBy) > 0 {
@@ -464,7 +545,7 @@ func (b *Builder) Update(columnValues map[string]string) string {
 	return "UPDATE " + b.quoteTable(b.sqlTableName) + " SET " + strings.Join(updateSql, ", ") + join + where + groupBy + orderBy + limit + offset + ";"
 }
 
-func (b *Builder) Where(where Where) *Builder {
+func (b *Builder) Where(where Where) BuilderInterface {
 	b.sqlWhere = append(b.sqlWhere, where)
 	return b
 }
@@ -761,7 +842,7 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 	return strings.Join(columnSQLs, ", ")
 }
 
-func (b *Builder) whereToSqlSingle(column string, operator string, value string) string {
+func (b *Builder) whereToSqlSingle(column, operator, value string) string {
 	if operator == "==" || operator == "===" {
 		operator = "="
 	}
