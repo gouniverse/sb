@@ -20,10 +20,18 @@ jobs:
       DB_PASSWORD: root
 
     steps:
+    - uses: actions/checkout@v3
+
     - name: Set up MySQL
       run: |
         sudo /etc/init.d/mysql start
         mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
+
+    - name: Verify MySQL connection
+      run: |
+        mysql --version
+        sudo apt-get install -y mysql-client
+        mysql --host 127.0.0.1 --port 33306 -utest -psecrettest -e "SHOW DATABASES"
     
     - name: Install PostgreSQL client
       run: |
@@ -32,13 +40,12 @@ jobs:
 
     # queries database with postgres client
     - name: Query database
-      run: psql -h postgres -d test -U test -c 'SELECT 1;'
+      run: psql -h postgres -p 55432 -d test -U test -c 'SELECT 1;'
       env:
         # postgress password is required; alternatively, you can run:
         # `PGPASSWORD=postgres_password psql ...`
         PGPASSWORD: test
 
-    - uses: actions/checkout@v3
 
     - name: Set up Go
       uses: actions/setup-go@v4
