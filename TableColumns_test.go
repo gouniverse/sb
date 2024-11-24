@@ -3,6 +3,7 @@ package sb
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"testing"
 
 	"github.com/samber/lo"
@@ -14,6 +15,8 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+var TestsWithMySQL = true
+
 func initMySQLWithTable(tableName string, columns []Column) (db *sql.DB, err error) {
 	db, err = database.Open(database.Options().
 		SetDatabaseType(database.DATABASE_TYPE_MYSQL).
@@ -24,6 +27,9 @@ func initMySQLWithTable(tableName string, columns []Column) (db *sql.DB, err err
 		SetPassword("test"))
 
 	if err != nil {
+		if strings.Contains(err.Error(), "could not be pinge") {
+			TestsWithMySQL = false
+		}
 		return nil, err
 	}
 
@@ -70,6 +76,11 @@ func TestTableColumnsMySQL(t *testing.T) {
 	columns := _TestTableColumns_columns()
 
 	db, err := initMySQLWithTable("test_table_columns", columns)
+
+	if TestsWithMySQL == false {
+		t.Log("TestsWithMySQL is false. Skipping TestTableColumnsMySQL test")
+		return
+	}
 
 	defer db.Close()
 

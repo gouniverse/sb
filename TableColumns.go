@@ -3,7 +3,6 @@ package sb
 import (
 	"context"
 	"errors"
-	"log"
 	"strings"
 
 	"github.com/gouniverse/base/database"
@@ -43,17 +42,15 @@ func tableColumnsMysql(ctx context.Context, q database.Queryable, tableName stri
 		return columns, err
 	}
 
-	log.Println(rows)
-
 	for _, row := range rows {
 		columnName := lo.ValueOr(row, "Field", "")
-		columnType := strings.ToLower(lo.ValueOr(row, "Type", ""))
+		columnTypeRaw := strings.ToLower(lo.ValueOr(row, "Type", ""))
 		columnDefault := lo.ValueOr(row, "Default", "")
 		columnNullable := lo.ValueOr(row, "Null", "")
 		columnKey := lo.ValueOr(row, "Key", "")
 		columnExtra := lo.ValueOr(row, "Extra", "")
 
-		length, decimals, columnType := rawColumnProcess(columnType)
+		columnType, length, decimals := rawColumnProcess(columnTypeRaw)
 
 		if commonize {
 			if strings.Contains(columnType, "int") {
@@ -110,14 +107,12 @@ func tableColumnsSqlite(ctx context.Context, q database.Queryable, tableName str
 
 	for _, row := range rows {
 		columnName := lo.ValueOr(row, "name", "")
-		columnType := strings.ToLower(lo.ValueOr(row, "type", ""))
+		columnTypeRaw := strings.ToLower(lo.ValueOr(row, "type", ""))
 		columnDefault := lo.ValueOr(row, "dflt_value", "")
 		columnNotNull := lo.ValueOr(row, "notnull", "")
 		columnPrimaryKey := lo.ValueOr(row, "pk", "")
 
-		// Length and Decimals from DECIMAL(LENGTH, DECIMALS)
-
-		length, decimals, columnType := rawColumnProcess(columnType)
+		columnType, length, decimals := rawColumnProcess(columnTypeRaw)
 
 		if commonize {
 			if strings.Contains(columnType, "int") {
