@@ -14,9 +14,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    steps:
-    - uses: actions/checkout@v3
+    env:
+      DB_DATABASE: test_db
+      DB_USER: root
+      DB_PASSWORD: root
 
+    steps:
+    - name: Set up MySQL
+      run: |
+        sudo /etc/init.d/mysql start
+        mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
+    
     - name: Install PostgreSQL client
       run: |
         apt-get update
@@ -29,6 +37,8 @@ jobs:
         # postgress password is required; alternatively, you can run:
         # `PGPASSWORD=postgres_password psql ...`
         PGPASSWORD: test
+
+    - uses: actions/checkout@v3
 
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -43,22 +53,22 @@ jobs:
 
     services:
       # MySQL service
-      mysql:
-        image: mysql:latest
-        env:
-          MYSQL_ROOT_PASSWORD: test
-          MYSQL_DATABASE: test
-          MYSQL_USER: test
-          MYSQL_PASSWORD: test
-        ports:
-          - "33306:3306"
-        options: >-
-          --health-cmd "mysqladmin ping -u test -p test"
-          --health-interval 20s
-          --health-timeout 15s
-          --health-retries 5
-        # volumes:
-        #   - ./mysql-data:/var/lib/mysql
+      # mysql:
+      #   image: mysql:latest
+      #   env:
+      #     MYSQL_ROOT_PASSWORD: test
+      #     MYSQL_DATABASE: test
+      #     MYSQL_USER: test
+      #     MYSQL_PASSWORD: test
+      #   ports:
+      #     - "33306:3306"
+      #   options: >-
+      #     --health-cmd "mysqladmin ping -u test -p test"
+      #     --health-interval 20s
+      #     --health-timeout 15s
+      #     --health-retries 5
+      #   # volumes:
+      #   #   - ./mysql-data:/var/lib/mysql
 
       # PostgreSQL service
       postgres:
