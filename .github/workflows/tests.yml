@@ -13,6 +13,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v3
 
@@ -26,3 +27,29 @@ jobs:
 
     - name: Test
       run: go test -v ./...
+
+    services:
+      # MySQL service
+      mysql:
+        image: mysql:latest
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: test
+          MYSQL_USER: test
+          MYSQL_PASSWORD: test
+        ports:
+          - "33306:3306"
+        volumes:
+          - ./mysql-data:/var/lib/mysql
+
+      # PostgreSQL service
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+          POSTGRES_USER: test
+        ports:
+          - "55432:5432"
+        volumes:
+          - ./postgres-data:/var/lib/postgresql/data
