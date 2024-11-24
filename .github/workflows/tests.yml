@@ -15,9 +15,11 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DB_DATABASE: test_db
-      DB_USER: root
-      DB_PASSWORD: root
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: test
+      MYSQL_USER: root
+      MYSQL_PASS: root
 
     steps:
     - uses: actions/checkout@v3
@@ -25,7 +27,7 @@ jobs:
     - name: Set up MySQL
       run: |
         sudo /etc/init.d/mysql start
-        mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
+        mysql -e 'CREATE DATABASE ${{ env.MYSQL_DATABASE }};' -u${{ env.MYSQL_USER }} -p${{ env.MYSQL_PASS }}
 
     - name: Verify MySQL connection
       run: |

@@ -11,6 +11,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/gouniverse/base/database"
+	"github.com/gouniverse/utils"
+
 	// _ "github.com/mattn/go-sqlite3"
 	_ "modernc.org/sqlite"
 )
@@ -18,13 +20,25 @@ import (
 var TestsWithMySQL = true
 
 func initMySQLWithTable(tableName string, columns []Column) (db *sql.DB, err error) {
+	host := utils.Env("MYSQL_HOST")
+	port := utils.Env("MYSQL_PORT")
+	dbUser := utils.Env("MYSQL_USER")
+	dbPass := utils.Env("MYSQL_PASS")
+	dbName := utils.Env("MYSQL_DATABASE")
+
+	host = lo.Ternary(host == "", "localhost", host)
+	port = lo.Ternary(port == "", "33306", port)
+	dbUser = lo.Ternary(dbUser == "", "test", dbUser)
+	dbPass = lo.Ternary(dbPass == "", "test", dbPass)
+	dbName = lo.Ternary(dbName == "", "test", dbName)
+
 	db, err = database.Open(database.Options().
 		SetDatabaseType(database.DATABASE_TYPE_MYSQL).
-		SetDatabaseHost("localhost").
-		SetDatabasePort("33306").
-		SetDatabaseName("test").
-		SetUserName("test").
-		SetPassword("test"))
+		SetDatabaseHost(host).
+		SetDatabasePort(port).
+		SetDatabaseName(dbName).
+		SetUserName(dbUser).
+		SetPassword(dbPass))
 
 	if err != nil {
 		if strings.Contains(err.Error(), "could not be pinge") {
