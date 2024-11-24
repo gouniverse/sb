@@ -132,8 +132,6 @@ func TestTableColumnsMySQL(t *testing.T) {
 			t.Fatal("Error column '"+expected.columnName+"' type must be '"+expected.columnType+"' but got: ", column.Type)
 		}
 	}
-
-	t.Log(columns)
 }
 
 func TestTableColumnsSQLite(t *testing.T) {
@@ -191,8 +189,6 @@ func TestTableColumnsSQLite(t *testing.T) {
 			t.Fatal("Error column '"+expected.columnName+"' type must be '"+expected.columnType+"' but got: ", column.Type)
 		}
 	}
-
-	t.Log(columns)
 }
 
 func _TestTableColumns_columns() []Column {
