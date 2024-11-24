@@ -39,6 +39,11 @@ jobs:
           MYSQL_PASSWORD: test
         ports:
           - "33306:3306"
+        options: >-
+          --health-cmd "mysqladmin ping -u test -p test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
         # volumes:
         #   - ./mysql-data:/var/lib/mysql
 
@@ -51,5 +56,10 @@ jobs:
           POSTGRES_USER: test
         ports:
           - "55432:5432"
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
         # volumes:
         #   - ./postgres-data:/var/lib/postgresql/data
