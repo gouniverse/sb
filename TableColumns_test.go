@@ -47,7 +47,7 @@ func initMySQLWithTable(tableName string, columns []Column) (db *sql.DB, err err
 		return nil, err
 	}
 
-	err = TableDropIfExists(db, tableName)
+	err = TableDropIfExists(database.Context(context.Background(), db), tableName)
 
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func initSQLiteWithTable(tableName string, columns []Column) (db *sql.DB, err er
 		return nil, err
 	}
 
-	err = TableDropIfExists(db, tableName)
+	err = TableDropIfExists(database.Context(context.Background(), db), tableName)
 
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func TestTableColumnsMySQL(t *testing.T) {
 		t.Fatal("Error must be NIL but got: ", err.Error())
 	}
 
-	columns, err = TableColumns(context.Background(), db, "test_table_columns", true)
+	columns, err = TableColumns(database.Context(context.Background(), db), "test_table_columns", true)
 
 	if err != nil {
 		t.Fatal("Error must be NIL but got: ", err.Error())
@@ -159,7 +159,7 @@ func TestTableColumnsSQLite(t *testing.T) {
 		t.Fatal("Error must be NIL but got: ", err.Error())
 	}
 
-	columns, err = TableColumns(context.Background(), db, "test_table_columns", true)
+	columns, err = TableColumns(database.Context(context.Background(), db), "test_table_columns", true)
 
 	if err != nil {
 		t.Fatal("Error must be NIL but got: ", err.Error())

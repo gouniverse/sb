@@ -1,35 +1,51 @@
 package sb
 
 import (
-	"database/sql"
+	"errors"
 
 	"github.com/gouniverse/base/database"
 )
 
-func TableDropSql(q database.Queryable, tableName string) string {
-	databaseType := database.DatabaseType(q)
+func TableDropSql(ctx database.QueryableContext, tableName string) (string, error) {
+	if ctx.Queryable() == nil {
+		return "", errors.New("queryable cannot be nil")
+	}
 
-	return NewBuilder(databaseType).Table(tableName).Drop()
+	databaseType := database.DatabaseType(ctx.Queryable())
+
+	return NewBuilder(databaseType).Table(tableName).Drop(), nil
 }
 
-func TableDropIfExistsSql(db *sql.DB, tableName string) string {
-	databaseType := database.DatabaseType(db)
+func TableDropIfExistsSql(ctx database.QueryableContext, tableName string) (string, error) {
+	if ctx.Queryable() == nil {
+		return "", errors.New("queryable cannot be nil")
+	}
 
-	return NewBuilder(databaseType).Table(tableName).DropIfExists()
+	databaseType := database.DatabaseType(ctx.Queryable())
+
+	return NewBuilder(databaseType).Table(tableName).DropIfExists(), nil
 }
 
-func TableDrop(db *sql.DB, tableName string) error {
-	sqlTableDrop := TableDropSql(db, tableName)
+func TableDrop(ctx database.QueryableContext, tableName string) error {
+	sqlTableDrop, err := TableDropSql(ctx, tableName)
 
-	_, err := db.Exec(sqlTableDrop)
+	_, err = ctx.Queryable().ExecContext(ctx, sqlTableDrop)
 
 	return err
 }
 
-func TableDropIfExists(db *sql.DB, tableName string) error {
-	sqlTableDrop := TableDropIfExistsSql(db, tableName)
+func TableDropIfExists(ctx database.QueryableContext, tableName string) error {
+	if ctx.Queryable() == nil {
+		return errors.New("queryable cannot be nil")
+	}
 
-	_, err := db.Exec(sqlTableDrop)
+	sqlTableDrop, err := TableDropIfExistsSql(ctx, tableName)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = ctx.Queryable().ExecContext(ctx, sqlTableDrop)
 
 	return err
 }

@@ -1,7 +1,6 @@
 package sb
 
 import (
-	"context"
 	"errors"
 	"strings"
 
@@ -11,8 +10,12 @@ import (
 )
 
 // TableColumns returns a list of columns for a given table name
-func TableColumns(ctx context.Context, q database.Queryable, tableName string, commonize bool) (columns []Column, err error) {
-	databaseType := database.DatabaseType(q)
+func TableColumns(ctx database.QueryableContext, tableName string, commonize bool) (columns []Column, err error) {
+	if ctx.Queryable() == nil {
+		return nil, errors.New("queryable cannot be nil")
+	}
+
+	databaseType := database.DatabaseType(ctx.Queryable())
 
 	if strings.TrimSpace(tableName) == "" {
 		return nil, errors.New("table name cannot be empty")
@@ -23,20 +26,20 @@ func TableColumns(ctx context.Context, q database.Queryable, tableName string, c
 	}
 
 	if databaseType == database.DATABASE_TYPE_SQLITE {
-		return tableColumnsSqlite(ctx, q, tableName, commonize)
+		return tableColumnsSqlite(ctx, tableName, commonize)
 	}
 
 	if databaseType == database.DATABASE_TYPE_MYSQL {
-		return tableColumnsMysql(ctx, q, tableName, commonize)
+		return tableColumnsMysql(ctx, tableName, commonize)
 	}
 
 	return columns, errors.New("not implemented for database driver: " + databaseType)
 }
 
-func tableColumnsMysql(ctx context.Context, q database.Queryable, tableName string, commonize bool) (columns []Column, err error) {
+func tableColumnsMysql(ctx database.QueryableContext, tableName string, commonize bool) (columns []Column, err error) {
 	sql := "DESCRIBE `" + tableName + "`;"
 
-	rows, err := database.SelectToMapString(ctx, q, sql)
+	rows, err := database.SelectToMapString(ctx, sql)
 
 	if err != nil {
 		return columns, err
@@ -95,11 +98,11 @@ func tableColumnsMysql(ctx context.Context, q database.Queryable, tableName stri
 	return columns, nil
 }
 
-func tableColumnsSqlite(ctx context.Context, q database.Queryable, tableName string, commonize bool) (columns []Column, err error) {
+func tableColumnsSqlite(ctx database.QueryableContext, tableName string, commonize bool) (columns []Column, err error) {
 	sql := "SELECT * FROM 'SQLITE_MASTER' WHERE type='table' ORDER BY NAME ASC;"
 	sql += "PRAGMA table_info('" + tableName + "');"
 
-	rows, err := database.SelectToMapString(ctx, q, sql)
+	rows, err := database.SelectToMapString(ctx, sql)
 
 	if err != nil {
 		return columns, err
