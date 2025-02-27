@@ -688,19 +688,7 @@ func (b *Builder) quoteColumn(columnName string) string {
 			columnQuoted = append(columnQuoted, columnPart)
 		}
 
-		if b.Dialect == DIALECT_MYSQL {
-			columnPart = "`" + columnPart + "`"
-		}
-
-		if b.Dialect == DIALECT_POSTGRES {
-			columnPart = `"` + columnPart + `"`
-		}
-
-		if b.Dialect == DIALECT_SQLITE {
-			columnPart = `"` + columnPart + `"`
-		}
-
-		columnQuoted = append(columnQuoted, columnPart)
+		columnQuoted = append(columnQuoted, b.quote(columnPart, "column"))
 	}
 
 	return strings.Join(columnQuoted, ".")
@@ -711,76 +699,10 @@ func (b *Builder) quoteTable(tableName string) string {
 	tableQuoted := []string{}
 
 	for _, tablePart := range tableSplit {
-		if b.Dialect == DIALECT_MYSQL {
-			tablePart = "`" + tablePart + "`"
-		}
-
-		if b.Dialect == DIALECT_POSTGRES {
-			tablePart = `"` + tablePart + `"`
-		}
-
-		if b.Dialect == DIALECT_SQLITE {
-			tablePart = `"` + tablePart + `"`
-		}
-
-		tableQuoted = append(tableQuoted, tablePart)
+		tableQuoted = append(tableQuoted, b.quote(tablePart, "table"))
 	}
 
 	return strings.Join(tableQuoted, ".")
-}
-
-func (b *Builder) quoteValue(value string) string {
-	if b.Dialect == DIALECT_MYSQL {
-		value = `"` + b.escapeMysql(value) + `"`
-	}
-
-	if b.Dialect == DIALECT_POSTGRES {
-		value = `"` + b.escapePostgres(value) + `"`
-	}
-
-	if b.Dialect == DIALECT_SQLITE {
-		value = `'` + b.escapeSqlite(value) + `'`
-	}
-
-	return value
-}
-
-func (b *Builder) escapeMysql(value string) string {
-	// escapeRegexp       = regexp.MustCompile(`[\0\t\x1a\n\r\"\'\\]`)
-	// characterEscapeMap = map[string]string{
-	// 	"\\0":  `\\0`,  //ASCII NULL
-	// 	"\b":   `\\b`,  //backspace
-	// 	"\t":   `\\t`,  //tab
-	// 	"\x1a": `\\Z`,  //ASCII 26 (Control+Z);
-	// 	"\n":   `\\n`,  //newline character
-	// 	"\r":   `\\r`,  //return character
-	// 	"\"":   `\\"`,  //quote (")
-	// 	"'":    `\'`,   //quote (')
-	// 	"\\":   `\\\\`, //backslash (\)
-	// 	// "\\%":  `\\%`,  //% character
-	// 	// "\\_":  `\\_`,  //_ character
-	// }
-	// return escapeRegexp.ReplaceAllStringFunc(val, func(s string) string {
-
-	// 	mVal, ok := characterEscapeMap[s]
-	// 	if ok {
-	// 		return mVal
-	// 	}
-	// 	return s
-	// })
-
-	escapedStr := strings.ReplaceAll(value, `"`, `""`)
-	return escapedStr
-}
-
-func (b *Builder) escapePostgres(value string) string {
-	escapedStr := strings.ReplaceAll(value, `"`, `""`)
-	return escapedStr
-}
-
-func (b *Builder) escapeSqlite(value string) string {
-	escapedStr := strings.ReplaceAll(value, "'", "''")
-	return escapedStr
 }
 
 /**
