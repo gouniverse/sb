@@ -9,18 +9,6 @@ import (
 	"github.com/samber/lo"
 )
 
-type Where struct {
-	Raw      string
-	Column   string
-	Operator string
-	Type     string
-	Value    string
-}
-
-type GroupBy struct {
-	Column string
-}
-
 type OrderBy struct {
 	Column    string
 	Direction string
@@ -38,22 +26,59 @@ type Column struct {
 	Default       string
 }
 
+type GroupBy struct {
+	Column string
+}
+
 type Builder struct {
-	Dialect        string
-	sql            map[string]any
-	sqlColumns     []Column
-	sqlGroupBy     []GroupBy
-	sqlLimit       int64
-	sqlOffset      int64
-	sqlOrderBy     []OrderBy
-	sqlTableName   string
-	sqlViewName    string
-	sqlViewColumns []string
-	sqlViewSQL     string
-	sqlWhere       []Where
+	Dialect            string
+	sql                map[string]any
+	sqlColumns         []Column
+	sqlGroupBy         []GroupBy
+	sqlLimit           int64
+	sqlOffset          int64
+	sqlOrderBy         []OrderBy
+	sqlTableName       string
+	sqlViewName        string
+	sqlViewColumns     []string
+	sqlViewSQL         string
+	sqlWhere           []Where
+	columnSQLGenerator ColumnSQLGenerator
 }
 
 var _ BuilderInterface = (*Builder)(nil)
+
+func NewBuilder(dialect string) *Builder {
+	var columnSQLGenerator ColumnSQLGenerator
+	switch dialect {
+	case DIALECT_MYSQL:
+		columnSQLGenerator = MySQLColumnSQLGenerator{}
+	case DIALECT_POSTGRES:
+		columnSQLGenerator = PostgreSQLColumnSQLGenerator{}
+	case DIALECT_SQLITE:
+		columnSQLGenerator = SQLiteColumnSQLGenerator{}
+	case DIALECT_MSSQL:
+		columnSQLGenerator = MSSQLColumnSQLGenerator{}
+	default:
+		panic("unsupported dialect: " + dialect)
+	}
+
+	return &Builder{
+		Dialect:            dialect,
+		sql:                map[string]any{},
+		sqlColumns:         []Column{},
+		sqlGroupBy:         []GroupBy{},
+		sqlLimit:           0,
+		sqlOffset:          0,
+		sqlOrderBy:         []OrderBy{},
+		sqlTableName:       "",
+		sqlViewName:        "",
+		sqlViewColumns:     []string{},
+		sqlViewSQL:         "",
+		sqlWhere:           []Where{},
+		columnSQLGenerator: columnSQLGenerator,
+	}
+}
 
 func (b *Builder) Table(tableName string) BuilderInterface {
 	b.sqlTableName = tableName
@@ -556,387 +581,10 @@ func (b *Builder) columnsToSQL(columns []Column) string {
 
 	for i := 0; i < len(columns); i++ {
 		column := columns[i]
-		columnName := column.Name
-		columnType := column.Type
-		columnLength := column.Length
-		columnDecimals := column.Decimals
-		columnAuto := column.AutoIncrement
-		columnPrimary := column.PrimaryKey
-		columnNullable := column.Nullable
-
-		columnSql := lo.IfF(b.Dialect == DIALECT_MYSQL, func() string {
-			columnType := lo.
-				IfF(columnType == COLUMN_TYPE_STRING, func() string {
-					columnLength = lo.Ternary(columnLength == 0, 255, columnLength)
-					return "VARCHAR"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_INTEGER, func() string {
-					columnLength = lo.Ternary(columnLength == 0, 20, columnLength)
-					return "BIGINT"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_FLOAT, func() string {
-					return "DOUBLE"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_TEXT, func() string {
-					return "LONGTEXT"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_LONGTEXT, func() string {
-					return "LONGTEXT"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_BLOB, func() string {
-					return "LONGBLOB"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_DATE, func() string {
-					return "DATE"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_DATETIME, func() string {
-					return "DATETIME"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_DECIMAL, func() string {
-					return "DECIMAL"
-				}).
-				Else(columnType)
-
-			sql := "`" + columnName + "` " + columnType
-
-			// Column length
-			if columnType == "DECIMAL" {
-				if columnLength == 0 {
-					columnLength = 10
-				}
-				if columnDecimals == 0 {
-					columnDecimals = 2
-				}
-				sql += "(" + toString(columnLength) + "," + toString(columnDecimals) + ")"
-
-			} else if columnLength != 0 {
-				sql += "(" + toString(columnLength) + ")"
-			}
-
-			// Auto increment
-			if columnAuto {
-				sql += " AUTO_INCREMENT"
-			}
-
-			// Primary key
-			if columnPrimary {
-				sql += " PRIMARY KEY"
-			}
-
-			// Non Nullable / Required
-			if !columnNullable {
-				sql += " NOT NULL"
-			}
-
-			if column.Unique {
-				sql += " UNIQUE"
-			}
-			return sql
-		}).ElseIfF(b.Dialect == DIALECT_POSTGRES, func() string {
-			columnType := lo.
-				IfF(columnType == COLUMN_TYPE_STRING, func() string {
-					return "TEXT"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_INTEGER, func() string {
-					return "INTEGER"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_FLOAT, func() string {
-					return "REAL"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_TEXT, func() string {
-					return "TEXT"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_LONGTEXT, func() string {
-					return "TEXT" // PostgreSQL only has TEXT (which defaults to LONGTEXT)
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_BLOB, func() string {
-					return "BYTEA"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_DATE, func() string {
-					return "DATE"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_DATETIME, func() string {
-					return "TIMESTAMP"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_DECIMAL, func() string {
-					return "DECIMAL"
-				}).
-				Else(columnType)
-
-			sql := `"` + columnName + `" ` + columnType + ``
-
-			// Column length
-			if columnType == "DECIMAL" {
-				if columnLength == 0 {
-					columnLength = 10
-				}
-				if columnDecimals == 0 {
-					columnDecimals = 2
-				}
-				sql += "(" + toString(columnLength) + "," + toString(columnDecimals) + ")"
-
-			} else if columnLength != 0 && columnType != "TEXT" {
-				sql += "(" + toString(columnLength) + ")"
-			}
-
-			// Auto increment
-			if columnAuto {
-				sql += " SERIAL"
-			}
-
-			// Primary key
-			if columnPrimary {
-				sql += " PRIMARY KEY"
-			}
-
-			// Non Nullable / Required
-			if !columnNullable {
-				sql += " NOT NULL"
-			}
-
-			if column.Unique {
-				sql += " UNIQUE"
-			}
-			return sql
-		}).ElseIfF(b.Dialect == DIALECT_SQLITE, func() string {
-			columnType := lo.
-				IfF(columnType == COLUMN_TYPE_STRING, func() string {
-					return "TEXT"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_INTEGER, func() string {
-					return "INTEGER"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_FLOAT, func() string {
-					return "REAL"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_TEXT, func() string {
-					return "TEXT"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_LONGTEXT, func() string {
-					return "TEXT" // SQLite only has TEXT (which defaults to LONGTEXT)
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_BLOB, func() string {
-					return "BLOB"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_DATE, func() string {
-					return "DATE"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_DATETIME, func() string {
-					return "DATETIME"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_DECIMAL, func() string {
-					return "DECIMAL"
-				}).
-				Else(columnType)
-
-			sql := `"` + columnName + `" ` + columnType + ``
-
-			// Column length
-			if columnType == "DECIMAL" {
-				if columnLength == 0 {
-					columnLength = 10
-				}
-				if columnDecimals == 0 {
-					columnDecimals = 2
-				}
-				sql += "(" + toString(columnLength) + "," + toString(columnDecimals) + ")"
-
-			} else if columnLength != 0 {
-				sql += "(" + toString(columnLength) + ")"
-			}
-
-			// Auto increment
-			if columnAuto {
-				sql += " AUTOINCREMENT"
-			}
-
-			// Primary key
-			if columnPrimary {
-				sql += " PRIMARY KEY"
-			}
-
-			// Non Nullable / Required
-			if !columnNullable {
-				sql += " NOT NULL"
-			}
-
-			if column.Unique {
-				sql += " UNIQUE"
-			}
-
-			return sql
-		}).ElseIfF(b.Dialect == DIALECT_MSSQL, func() string {
-			columnType := lo.
-				IfF(columnType == COLUMN_TYPE_STRING, func() string {
-					return "NVARCHAR"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_INTEGER, func() string {
-					return "INTEGER"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_FLOAT, func() string {
-					return "FLOAT"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_TEXT, func() string {
-					return "TEXT"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_BLOB, func() string {
-					return "VARBINARY"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_DATE, func() string {
-					return "DATE"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_DATETIME, func() string {
-					return "DATETIME2"
-				}).
-				ElseIfF(columnType == COLUMN_TYPE_DECIMAL, func() string {
-					return "DECIMAL"
-				}).
-				Else(columnType)
-
-			sql := `"` + columnName + `" ` + columnType + ``
-
-			// Column length
-			if columnType == "DECIMAL" {
-				if columnLength == 0 {
-					columnLength = 10
-				}
-				if columnDecimals == 0 {
-					columnDecimals = 2
-				}
-				sql += "(" + toString(columnLength) + "," + toString(columnDecimals) + ")"
-
-			} else if columnType == "VARBINARY" {
-				sql += "(MAX)"
-
-			} else if columnLength != 0 {
-				sql += "(" + toString(columnLength) + ")"
-			}
-
-			// Auto increment
-			if columnAuto {
-				sql += " AUTOINCREMENT"
-			}
-
-			// Primary key
-			if columnPrimary {
-				sql += " PRIMARY KEY"
-			}
-
-			// Non Nullable / Required
-			if !columnNullable {
-				sql += " NOT NULL"
-			}
-
-			if column.Unique {
-				sql += " UNIQUE"
-			}
-
-			return sql
-		}).ElseF(func() string {
-			return "not supported"
-		})
-
-		columnSQLs = append(columnSQLs, columnSql)
+		columnSQLs = append(columnSQLs, b.columnSQLGenerator.GenerateSQL(column))
 	}
 
 	return strings.Join(columnSQLs, ", ")
-}
-
-func (b *Builder) whereToSqlSingle(column, operator, value string) string {
-	if operator == "==" || operator == "===" {
-		operator = "="
-	}
-	if operator == "!=" || operator == "!==" {
-		operator = "<>"
-	}
-	columnQuoted := b.quoteColumn(column)
-	valueQuoted := b.quoteValue(value)
-
-	sql := ""
-	if b.Dialect == DIALECT_MYSQL {
-		if value == "NULL" && operator == "=" {
-			sql = columnQuoted + " IS NULL"
-		} else if value == "NULL" && operator == "<>" {
-			sql = columnQuoted + " IS NOT NULL"
-		} else {
-			sql = columnQuoted + " " + operator + " " + valueQuoted
-		}
-	}
-	if b.Dialect == DIALECT_POSTGRES {
-		if value == "NULL" && operator == "=" {
-			sql = columnQuoted + " IS NULL"
-		} else if value == "NULL" && operator == "<>" {
-			sql = columnQuoted + " IS NOT NULL"
-		} else {
-			sql = columnQuoted + " " + operator + " " + valueQuoted
-		}
-	}
-	if b.Dialect == DIALECT_SQLITE {
-		if value == "NULL" && operator == "=" {
-			sql = columnQuoted + " IS NULL"
-		} else if value == "NULL" && operator == "<>" {
-			sql = columnQuoted + " IS NOT NULL"
-		} else {
-			sql = columnQuoted + " " + operator + " " + valueQuoted
-		}
-	}
-	return sql
-}
-
-/**
- * Converts wheres to SQL
- * @param array $wheres
- * @return string
- */
-func (b *Builder) whereToSql(wheres []Where) string {
-	sql := []string{}
-	for _, where := range wheres {
-		if where.Raw != "" {
-			sql = append(sql, where.Raw)
-			continue
-		}
-
-		if where.Type == "" {
-			where.Type = "AND"
-		}
-
-		if where.Column != "" {
-			sqlSingle := b.whereToSqlSingle(where.Column, where.Operator, where.Value)
-
-			if len(sql) > 0 {
-				sql = append(sql, where.Type+" "+sqlSingle)
-			} else {
-				sql = append(sql, sqlSingle)
-			}
-
-		}
-		// } else {
-		// 	$_sql = array();
-		// 	$all = $where['WHERE'];
-		// 	for ($k = 0; $k < count($all); $k++) {
-		// 		$w = $all[$k];
-		// 		$sqlSingle = $this->whereToSqlSingle($w['COLUMN'], $w['OPERATOR'], $w['VALUE']);
-		// 		if ($k == 0) {
-		// 			$_sql[] = $sqlSingle;
-		// 		} else {
-		// 			$_sql[] = $w['TYPE'] . " " . $sqlSingle;
-		// 		}
-		// 	}
-		// 	$_sql = (count($_sql) > 0) ? " (" . implode(" ", $_sql) . ")" : "";
-
-		// 	if ($i == 0) {
-		// 		$sql[] = $_sql;
-		// 	} else {
-		// 		$sql[] = $where['TYPE'] . " " . $_sql;
-		// 	}
-		// }
-	}
-
-	if len(sql) > 0 {
-		return " WHERE " + strings.Join(sql, " ")
-	}
-
-	return ""
 }
 
 func (b *Builder) groupByToSql(groupBys []GroupBy) string {
@@ -1034,7 +682,6 @@ func (b *Builder) quoteColumn(columnName string) string {
 
 		if strings.Contains(columnPart, "(") {
 			columnQuoted = append(columnQuoted, columnPart)
-			continue
 		}
 
 		if b.Dialect == DIALECT_MYSQL {
