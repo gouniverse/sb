@@ -1020,3 +1020,36 @@ func TestBuilderTableSelectFn(t *testing.T) {
 		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
 	}
 }
+
+func TestBuilderViewDropMysql(t *testing.T) {
+	sql := NewBuilder(DIALECT_MYSQL).
+		View("v_users").
+		Drop()
+
+	expected := "DROP VIEW `v_users`;"
+	if sql != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
+	}
+}
+
+func TestBuilderViewDropPostgres(t *testing.T) {
+	sql := NewBuilder(DIALECT_POSTGRES).
+		View("v_users").
+		Drop()
+
+	expected := `DROP VIEW "v_users";`
+	if sql != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
+	}
+}
+
+func TestBuilderViewDropSqlite(t *testing.T) {
+	sql := NewBuilder(DIALECT_SQLITE).
+		View("v_users").
+		Drop()
+
+	expected := `DROP VIEW "v_users";`
+	if sql != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
+	}
+}
