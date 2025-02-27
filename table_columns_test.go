@@ -153,6 +153,10 @@ func TestTableColumnsSQLite(t *testing.T) {
 
 	db, err := initSQLiteWithTable("test_table_columns", columns)
 
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
 	defer db.Close()
 
 	if err != nil {
