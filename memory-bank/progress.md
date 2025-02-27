@@ -6,13 +6,13 @@
 - Support for MySQL, PostgreSQL, and SQLite dialects is present.
 
 ## What's Left to Build
-- SELECT query building functionality.
 - VIEW creation and deletion functionality.
 - Comprehensive testing for all functionalities.
 - Documentation for all functionalities.
 
 ## Current Status
 - Initial project inspection and memory bank setup are complete.
+- SELECT query building functionality is implemented.
 - Code review and refactoring are pending.
 
 ## Known Issues

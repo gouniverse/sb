@@ -76,6 +76,21 @@ func TestBuilderTableCreateMssql(t *testing.T) {
 	}
 }
 
+func TestBuilderTableSelectFull(t *testing.T) {
+	sql := NewBuilder(DIALECT_SQLITE).
+		Table("users").
+		Where(Where{Column: "first_name", Operator: "!=", Value: "Jane"}).
+		OrderBy("first_name", "asc").
+		Limit(10).
+		Offset(20).
+		Select([]string{"id", "first_name", "last_name"})
+
+	expected := `SELECT "id", "first_name", "last_name" FROM "users" WHERE "first_name" <> 'Jane' ORDER BY "first_name" ASC LIMIT 10 OFFSET 20;`
+	if sql != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
+	}
+}
+
 func TestBuilderTableCreateMysql(t *testing.T) {
 	sql := NewBuilder(DIALECT_MYSQL).
 		Table("users").
