@@ -449,7 +449,11 @@ func (b *Builder) Select(columns []string) string {
 
 	if len(columns) > 0 {
 		for index, column := range columns {
-			columns[index] = b.quoteColumn(column)
+			if strings.Contains(column, "(") {
+				columns[index] = column // Do not quote function calls
+			} else {
+				columns[index] = b.quoteColumn(column)
+			}
 		}
 		columnsStr = strings.Join(columns, ", ")
 	}
