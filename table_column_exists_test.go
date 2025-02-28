@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -21,13 +22,11 @@ func (m *mysqlMockDriver) Open(name string) (driver.Conn, error) {
 	return m.db.Driver().Open(name)
 }
 
-func TestTableColumnExists(t *testing.T) {
-	// Create a new mock database with MySQL driver
-	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
+func mockMysql(t *testing.T) (*sql.DB, sqlmock.Sqlmock) {
+	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
 
 	// Create our custom driver wrapper
 	customDriver := &mysqlMockDriver{
@@ -44,18 +43,25 @@ func TestTableColumnExists(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to open mock database: %v", err)
 	}
-	defer testDB.Close()
 
 	// Verify our driver wrapper works as expected
 	driverFullName := reflect.ValueOf(testDB.Driver()).Type().String()
-	t.Logf("Driver type: %s", driverFullName)
+	if !strings.Contains(driverFullName, "mysql") {
+		t.Fatalf("expected driver to be MySQL, got %s", driverFullName)
+	}
+	return testDB, mock
+}
+
+func TestTableColumnExists(t *testing.T) {
+	// Create a new mock database with MySQL driver
+	db, mock := mockMysql(t)
 
 	// Set up expectation for MySQL query
 	mock.ExpectQuery("SELECT 1 FROM information_schema\\.COLUMNS WHERE TABLE_NAME = \\? AND COLUMN_NAME = \\?").
 		WithArgs("test_table", "test_column").
 		WillReturnRows(sqlmock.NewRows([]string{"1"}).AddRow(1))
 
-	ctx := database.Context(context.Background(), testDB)
+	ctx := database.Context(context.Background(), db)
 	exists, err := TableColumnExists(ctx, "test_table", "test_column")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
