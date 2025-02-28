@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	// _ "github.com/glebarez/go-sqlite"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -368,6 +367,60 @@ func TestBuilderTableCreateIfNotExistsSqlite(t *testing.T) {
 		CreateIfNotExists()
 
 	expected := `CREATE TABLE IF NOT EXISTS "users"("id" TEXT(40) PRIMARY KEY NOT NULL, "image" BLOB NOT NULL, "price_default" DECIMAL(10,2) NOT NULL, "price_custom" DECIMAL(12,10) NOT NULL, "created_at" DATETIME NOT NULL, "deleted_at" DATETIME);`
+	if sql != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
+	}
+}
+
+func TestBuilderTableColumnChangeMysql(t *testing.T) {
+	sql, err := NewBuilder(DIALECT_MYSQL).TableColumnChange("users", Column{
+		Name:   "email",
+		Type:   COLUMN_TYPE_STRING,
+		Length: 255,
+		Unique: true,
+	})
+
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
+	expected := "ALTER TABLE `users` MODIFY COLUMN `email` VARCHAR(255) NOT NULL UNIQUE;"
+	if sql != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
+	}
+}
+
+func TestBuilderTableColumnChangePostgres(t *testing.T) {
+	sql, err := NewBuilder(DIALECT_POSTGRES).TableColumnChange("users", Column{
+		Name:   "email",
+		Type:   COLUMN_TYPE_STRING,
+		Length: 255,
+		Unique: true,
+	})
+
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
+	expected := `ALTER TABLE "users" ALTER COLUMN "email" TEXT NOT NULL UNIQUE;`
+	if sql != expected {
+		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
+	}
+}
+
+func TestBuilderTableColumnChangeSqlite(t *testing.T) {
+	sql, err := NewBuilder(DIALECT_SQLITE).TableColumnChange("users", Column{
+		Name:   "email",
+		Type:   COLUMN_TYPE_STRING,
+		Length: 255,
+		Unique: true,
+	})
+
+	if err != nil {
+		t.Fatal("Error must be NIL but got: ", err.Error())
+	}
+
+	expected := `ALTER TABLE "users" ALTER COLUMN "email" TEXT(255) NOT NULL UNIQUE;`
 	if sql != expected {
 		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
 	}
@@ -1051,5 +1104,33 @@ func TestBuilderViewDropSqlite(t *testing.T) {
 	expected := `DROP VIEW "v_users";`
 	if sql != expected {
 		t.Fatal("Expected:\n", expected, "\nbut found:\n", sql)
+	}
+}
+
+func TestBuilder_TableColumnChange(t *testing.T) {
+	type args struct {
+		tableName string
+		column    Column
+	}
+	tests := []struct {
+		name          string
+		b             *Builder
+		args          args
+		wantSqlString string
+		wantErr       bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotSqlString, err := tt.b.TableColumnChange(tt.args.tableName, tt.args.column)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Builder.TableColumnChange() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotSqlString != tt.wantSqlString {
+				t.Errorf("Builder.TableColumnChange() = %v, want %v", gotSqlString, tt.wantSqlString)
+			}
+		})
 	}
 }

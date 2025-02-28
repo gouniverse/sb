@@ -1,15 +1,16 @@
-version: '3.8'
+version: "3.8"
 
 services:
+  # MySQL
   mysql:
     image: mysql:latest
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: your_mysql_root_password
-      MYSQL_DATABASE: your_mysql_database_name   
+      MYSQL_DATABASE: your_mysql_database_name
 
       MYSQL_USER: your_mysql_user
-      MYSQL_PASSWORD: your_mysql_password   
+      MYSQL_PASSWORD: your_mysql_password
 
     ports:
       - "3306:3306"
@@ -22,7 +23,7 @@ services:
     environment:
       POSTGRES_PASSWORD: your_postgres_password
       POSTGRES_DB: your_postgres_database_name
-      POSTGRES_USER: your_postgres_user   
+      POSTGRES_USER: your_postgres_user
 
     ports:
       - "5432:5432"
