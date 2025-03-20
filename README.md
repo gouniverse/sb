@@ -218,6 +218,7 @@ podman run -it --rm -p 5432:5432 -e POSTGRES_PASSWORD=test -e POSTGRES_DB=test -
 - https://github.com/cosiner/go-sqldb
 - https://github.com/simukti/sqldb-logger
 - https://github.com/elgs/gosqlcrud
+- https://github.com/nandrechetan/gomb
 
 ## TODO
 - github.com/stapelberg/postgrestest
