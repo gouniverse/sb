@@ -126,8 +126,11 @@ func (g PostgreSQLColumnSQLGenerator) GenerateSQL(column Column) string {
 		}
 		sql += "(" + toString(column.Length) + "," + toString(column.Decimals) + ")"
 
-	} else if column.Length != 0 && columnType != "TEXT" {
-		sql += "(" + toString(column.Length) + ")"
+	} else if column.Length != 0 {
+		supportsLength := columnType == "VARCHAR" || columnType == "CHAR" || columnType == "BIT VARYING" || columnType == "BIT"
+		if supportsLength {
+			sql += "(" + toString(column.Length) + ")"
+		}
 	}
 
 	// Auto increment
