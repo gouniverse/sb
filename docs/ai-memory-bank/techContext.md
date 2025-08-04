@@ -1,9 +1,18 @@
 # Technical Context: Simplified SQL Builder (SB)
 
+Last updated at: 2025-07-22
+
 ## Technologies Used
-- Go programming language
+- Go programming language (1.23.3+)
 - `database/sql` package (Go's standard database library)
-- MySQL, PostgreSQL, and SQLite database drivers
+- Database drivers:
+  - MySQL: `github.com/go-sql-driver/mysql`
+  - PostgreSQL: `github.com/lib/pq`
+  - SQLite: `github.com/mattn/go-sqlite3` and `modernc.org/sqlite`
+- Additional utility packages:
+  - `github.com/samber/lo` for functional programming helpers
+  - `github.com/gouniverse/*` for various utility functions
+  - `github.com/georgysavva/scany` for scanning SQL rows into structs
 
 ## Development Setup
 - Go development environment
@@ -17,8 +26,22 @@
 - Transaction management should be reliable and consistent across different database drivers.
 
 ## Dependencies
+### Core Dependencies
 - `database/sql` (Go's standard database library)
-- Specific database drivers (e.g., `github.com/go-sql-driver/mysql` for MySQL)
+- Database drivers:
+  - `github.com/go-sql-driver/mysql` for MySQL
+  - `github.com/lib/pq` for PostgreSQL
+  - `github.com/mattn/go-sqlite3` and `modernc.org/sqlite` for SQLite
+
+### Utility Dependencies
+- `github.com/samber/lo` - Functional programming helpers
+- `github.com/georgysavva/scany` - SQL row scanning
+- `github.com/gouniverse/*` - Various utility packages
+- `github.com/spf13/cast` - Type conversion utilities
+
+### Development Dependencies
+- Testing frameworks (implicit with Go's standard library)
+- `github.com/stretchr/testify` for assertions
 
 ## Date Handling
 

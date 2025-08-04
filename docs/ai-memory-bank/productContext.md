@@ -1,20 +1,84 @@
 # Product Context: Simplified SQL Builder (SB)
 
+Last updated at: 2025-07-22
+
 ## Problem
-Many Go developers require a way to programmatically generate SQL queries, but existing SQL builder libraries can be overly complex or offer features beyond what's needed for basic tasks. This leads to a steeper learning curve and increased project dependencies.
+Many Go developers need a straightforward way to generate SQL queries programmatically. While there are several SQL builder libraries available, they often come with:
+- Steep learning curves
+- Unnecessary complexity for common use cases
+- Heavy dependencies
+- Inconsistent behavior across different database systems
 
 ## Solution
-SB provides a simplified and lightweight SQL builder that focuses on the most common SQL operations. It offers a fluent interface for constructing queries, making it easy to generate SQL code in a readable and maintainable way. The database wrapper simplifies transaction management, reducing boilerplate code.
+SB provides a clean, type-safe SQL builder with these key features:
+- **Fluent Interface**: Chainable methods for building queries
+- **Database Support**: MySQL, PostgreSQL, and SQLite with consistent API
+- **Minimal Dependencies**: Primarily relies on Go's standard library
+- **Type Safety**: Strongly-typed query building
+- **Transaction Support**: Simplified transaction management
+- **Schema Operations**: Table and column management
+- **View Support**: Create and manage database views
 
-## How it Should Work
-- The library should provide functions to build SQL queries for creating tables, dropping tables, inserting data, deleting data, selecting data, creating views, and dropping views.
-- The API should be intuitive and easy to use, with clear naming conventions.
-- The generated SQL should be compatible with MySQL, PostgreSQL, and SQLite.
-- The database wrapper should seamlessly integrate with the standard `database/sql` package, allowing developers to use existing database connections.
-- Transaction management should be simplified through `BeginTransaction`, `CommitTransaction`, and `RollbackTransaction` methods.
+## How it Works
+
+### Query Building
+```go
+// Example: Building a SELECT query
+sql := sb.NewBuilder(sb.DIALECT_MYSQL).
+    Table("users").
+    Select([]string{"id", "name", "email"}).
+    Where(sb.Where{"status", "=", "active"}).
+    OrderBy("created_at", "DESC").
+    Limit(10)
+```
+
+### Database Operations
+```go
+// Example: Database operations with transactions
+db := sb.NewDatabaseFromDriver("mysql", "user:pass@/dbname")
+err := db.ExecInTransaction(func(tx *sb.Database) error {
+    // Perform multiple operations in transaction
+    _, err := tx.Exec("INSERT INTO users (name, email) VALUES (?, ?)", "John", "john@example.com")
+    return err
+})
+```
+
+### Schema Management
+```go
+// Example: Table creation
+sql := sb.NewBuilder(sb.DIALECT_POSTGRES).
+    Table("products").
+    Column(sb.Column{
+        Name:       "id",
+        Type:       sb.COLUMN_TYPE_STRING,
+        Length:     40,
+        PrimaryKey: true,
+    }).
+    Column(sb.Column{
+        Name:   "price",
+        Type:   sb.COLUMN_TYPE_DECIMAL,
+        Length: 10,
+    }).
+    Create()
+```
 
 ## User Experience Goals
-- Developers can quickly learn and use the library without extensive documentation.
-- SQL queries can be generated with minimal code.
-- Transaction management is straightforward and less error-prone.
-- The library integrates smoothly into existing Go projects.
+
+### For Developers
+- **Intuitive API**: Method chaining that reads like a sentence
+- **Consistent Behavior**: Same API works across supported databases
+- **Helpful Errors**: Clear error messages for common mistakes
+- **Comprehensive Examples**: Well-documented examples for common use cases
+
+### For Maintainers
+- **Test Coverage**: High test coverage for all features
+- **Documentation**: Clear, up-to-date documentation
+- **Backward Compatibility**: Careful versioning and deprecation policies
+- **Performance**: Minimal overhead over raw SQL
+
+## Integration
+SB is designed to work seamlessly with:
+- Existing `database/sql` connections
+- Go modules
+- Common web frameworks (Gin, Echo, etc.)
+- Testing frameworks (Testify, etc.)
