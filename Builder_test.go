@@ -1134,3 +1134,84 @@ func TestBuilder_TableColumnChange(t *testing.T) {
 		})
 	}
 }
+
+func TestSQLiteAutoIncrementOrder(t *testing.T) {
+	// Test that SQLite generates correct PRIMARY KEY AUTOINCREMENT order
+	sqlQuery := NewBuilder(DIALECT_SQLITE).
+		Table("test_table").
+		Column(Column{
+			Name:          "id",
+			Type:          COLUMN_TYPE_INTEGER,
+			PrimaryKey:    true,
+			AutoIncrement: true,
+			Nullable:      false,
+		}).
+		Column(Column{
+			Name:     "name",
+			Type:     COLUMN_TYPE_STRING,
+			Nullable: false,
+		}).
+		CreateIfNotExists()
+
+	expected := `CREATE TABLE IF NOT EXISTS "test_table"("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "name" TEXT NOT NULL);`
+	if sqlQuery != expected {
+		t.Fatalf("Expected:\n%s\nbut found:\n%s", expected, sqlQuery)
+	}
+
+	// Test that the generated SQL actually works with SQLite
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open SQLite database: %v", err)
+	}
+	defer db.Close()
+
+	_, err = db.Exec(sqlQuery)
+	if err != nil {
+		t.Fatalf("Failed to execute generated SQL: %v", err)
+	}
+
+	// Test inserting data to verify autoincrement works
+	_, err = db.Exec(`INSERT INTO test_table (name) VALUES ('test1'), ('test2')`)
+	if err != nil {
+		t.Fatalf("Failed to insert test data: %v", err)
+	}
+
+	// Verify the autoincrement worked
+	rows, err := db.Query(`SELECT id, name FROM test_table ORDER BY id`)
+	if err != nil {
+		t.Fatalf("Failed to query test data: %v", err)
+	}
+	defer rows.Close()
+
+	expectedData := []struct {
+		id   int
+		name string
+	}{
+		{1, "test1"},
+		{2, "test2"},
+	}
+
+	i := 0
+	for rows.Next() {
+		var id int
+		var name string
+		err := rows.Scan(&id, &name)
+		if err != nil {
+			t.Fatalf("Failed to scan row: %v", err)
+		}
+
+		if i >= len(expectedData) {
+			t.Fatalf("More rows than expected")
+		}
+
+		if id != expectedData[i].id || name != expectedData[i].name {
+			t.Fatalf("Row %d: expected id=%d, name=%s but got id=%d, name=%s", 
+				i, expectedData[i].id, expectedData[i].name, id, name)
+		}
+		i++
+	}
+
+	if i != len(expectedData) {
+		t.Fatalf("Expected %d rows but got %d", len(expectedData), i)
+	}
+}

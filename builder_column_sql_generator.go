@@ -203,14 +203,14 @@ func (g SQLiteColumnSQLGenerator) GenerateSQL(column Column) string {
 		sql += "(" + toString(column.Length) + ")"
 	}
 
-	// Auto increment
-	if column.AutoIncrement {
-		sql += " AUTOINCREMENT"
-	}
-
 	// Primary key
 	if column.PrimaryKey {
 		sql += " PRIMARY KEY"
+	}
+
+	// Auto increment
+	if column.AutoIncrement {
+		sql += " AUTOINCREMENT"
 	}
 
 	// Non Nullable / Required
